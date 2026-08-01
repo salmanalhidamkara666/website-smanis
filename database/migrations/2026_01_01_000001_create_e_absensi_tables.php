@@ -1,0 +1,30 @@
+<?php
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+return new class extends Migration {
+    public function up(): void
+    {
+        Schema::create('users', function (Blueprint $table) {
+            $table->id(); $table->string('name'); $table->string('username')->unique(); $table->string('email')->nullable()->unique();
+            $table->string('password'); $table->enum('role',['admin','pembina','siswa','wali']); $table->enum('status',['aktif','nonaktif'])->default('aktif'); $table->timestamps();
+        });
+        Schema::create('kelas', function (Blueprint $table) { $table->id(); $table->string('nama_kelas'); $table->string('tingkat')->nullable(); $table->string('jurusan')->nullable(); $table->timestamps(); });
+        Schema::create('pembina', function (Blueprint $table) { $table->id(); $table->foreignId('user_id')->constrained('users')->cascadeOnDelete(); $table->string('nip')->unique(); $table->string('nama'); $table->string('no_hp')->nullable(); $table->text('alamat')->nullable(); $table->timestamps(); });
+        Schema::create('siswa', function (Blueprint $table) { $table->id(); $table->foreignId('user_id')->constrained('users')->cascadeOnDelete(); $table->foreignId('wali_user_id')->nullable()->constrained('users')->nullOnDelete(); $table->string('nis')->unique(); $table->string('nama'); $table->enum('jenis_kelamin',['L','P']); $table->foreignId('kelas_id')->constrained('kelas')->cascadeOnDelete(); $table->text('alamat')->nullable(); $table->string('no_hp')->nullable(); $table->string('wali_nama')->nullable(); $table->string('wali_no_hp')->nullable(); $table->timestamps(); });
+        Schema::create('ekstrakurikuler', function (Blueprint $table) { $table->id(); $table->string('nama'); $table->text('deskripsi')->nullable(); $table->foreignId('pembina_id')->constrained('pembina')->cascadeOnDelete(); $table->string('lokasi')->nullable(); $table->enum('status',['aktif','nonaktif'])->default('aktif'); $table->timestamps(); });
+        Schema::create('anggota_ekstrakurikuler', function (Blueprint $table) { $table->id(); $table->foreignId('siswa_id')->constrained('siswa')->cascadeOnDelete(); $table->foreignId('ekstrakurikuler_id')->constrained('ekstrakurikuler')->cascadeOnDelete(); $table->enum('status',['aktif','nonaktif'])->default('aktif'); $table->timestamps(); $table->unique(['siswa_id','ekstrakurikuler_id']); });
+        Schema::create('jadwal', function (Blueprint $table) { $table->id(); $table->foreignId('ekstrakurikuler_id')->constrained('ekstrakurikuler')->cascadeOnDelete(); $table->string('hari'); $table->time('jam_mulai'); $table->time('jam_selesai'); $table->string('lokasi')->nullable(); $table->timestamps(); });
+        Schema::create('sesi_absensi', function (Blueprint $table) { $table->id(); $table->foreignId('ekstrakurikuler_id')->constrained('ekstrakurikuler')->cascadeOnDelete(); $table->foreignId('pembina_id')->constrained('pembina')->cascadeOnDelete(); $table->foreignId('jadwal_id')->nullable()->constrained('jadwal')->nullOnDelete(); $table->date('tanggal'); $table->time('jam_mulai'); $table->time('jam_selesai'); $table->enum('status',['aktif','nonaktif','selesai'])->default('aktif'); $table->timestamps(); });
+        Schema::create('qr_absensi', function (Blueprint $table) { $table->id(); $table->foreignId('sesi_absensi_id')->constrained('sesi_absensi')->cascadeOnDelete(); $table->string('token', 120)->unique(); $table->enum('jenis_absensi',['masuk','keluar']); $table->timestamp('expired_at'); $table->enum('status',['aktif','nonaktif'])->default('aktif'); $table->timestamps(); });
+        Schema::create('absensi', function (Blueprint $table) { $table->id(); $table->foreignId('sesi_absensi_id')->constrained('sesi_absensi')->cascadeOnDelete(); $table->foreignId('siswa_id')->constrained('siswa')->cascadeOnDelete(); $table->foreignId('qr_absensi_id')->nullable()->constrained('qr_absensi')->nullOnDelete(); $table->timestamp('waktu_masuk')->nullable(); $table->timestamp('waktu_keluar')->nullable(); $table->enum('status',['hadir','terlambat','izin','sakit','alpha'])->default('hadir'); $table->text('keterangan')->nullable(); $table->string('user_agent')->nullable(); $table->string('ip_address')->nullable(); $table->timestamps(); $table->unique(['sesi_absensi_id','siswa_id']); });
+        Schema::create('izin', function (Blueprint $table) { $table->id(); $table->foreignId('siswa_id')->constrained('siswa')->cascadeOnDelete(); $table->foreignId('sesi_absensi_id')->nullable()->constrained('sesi_absensi')->nullOnDelete(); $table->enum('jenis',['izin','sakit']); $table->date('tanggal'); $table->text('keterangan')->nullable(); $table->string('bukti')->nullable(); $table->enum('status',['menunggu','disetujui','ditolak'])->default('menunggu'); $table->text('catatan_pembina')->nullable(); $table->timestamps(); });
+        Schema::create('notifikasi', function (Blueprint $table) { $table->id(); $table->foreignId('user_id')->constrained('users')->cascadeOnDelete(); $table->string('judul'); $table->text('pesan'); $table->string('tipe')->default('info'); $table->boolean('status_baca')->default(false); $table->timestamps(); });
+        Schema::create('audit_log', function (Blueprint $table) { $table->id(); $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete(); $table->string('aktivitas'); $table->string('tabel')->nullable(); $table->json('data_lama')->nullable(); $table->json('data_baru')->nullable(); $table->string('ip_address')->nullable(); $table->string('user_agent')->nullable(); $table->timestamps(); });
+        Schema::create('settings', function (Blueprint $table) { $table->id(); $table->string('key')->unique(); $table->text('value')->nullable(); $table->timestamps(); });
+    }
+    public function down(): void
+    {
+        foreach (['settings','audit_log','notifikasi','izin','absensi','qr_absensi','sesi_absensi','jadwal','anggota_ekstrakurikuler','ekstrakurikuler','siswa','pembina','kelas','users'] as $table) Schema::dropIfExists($table);
+    }
+};

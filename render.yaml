@@ -1,0 +1,36 @@
+services:
+  - type: web
+    name: web-e-absensi-qr
+    env: php
+    plan: free
+    region: oregon
+    branch: main
+    buildCommand: composer install --prefer-dist --no-interaction && php artisan storage:link
+    startCommand: php artisan serve --host=0.0.0.0 --port $PORT
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: 'false'
+      - key: APP_URL
+        value: 'https://your-app.onrender.com'
+      - key: DB_CONNECTION
+        value: mysql
+      - key: DB_HOST
+        value: '<your-database-host>'
+      - key: DB_PORT
+        value: '3306'
+      - key: DB_DATABASE
+        value: '<your-database-name>'
+      - key: DB_USERNAME
+        value: '<your-database-user>'
+      - key: DB_PASSWORD
+        value: '<your-database-password>'
+      - key: BROADCAST_DRIVER
+        value: log
+      - key: CACHE_DRIVER
+        value: file
+      - key: SESSION_DRIVER
+        value: file
+      - key: QUEUE_CONNECTION
+        value: sync
