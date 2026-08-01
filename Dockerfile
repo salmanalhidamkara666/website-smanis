@@ -9,7 +9,10 @@ RUN apt-get update && apt-get install -y \
     libxml2-dev \
     libicu-dev \
     libsqlite3-dev \
+    && docker-php-source extract \
+    && docker-php-ext-configure pdo_sqlite --with-sqlite3=/usr \
     && docker-php-ext-install sqlite3 pdo_sqlite mbstring exif pcntl bcmath intl sockets xml zip \
+    && docker-php-source delete \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
