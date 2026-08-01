@@ -19,8 +19,12 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 WORKDIR /var/www/html
 
 COPY . .
+RUN php -r "file_exists('.env') || copy('.env.example', '.env');"
+RUN php -r "$env = file_get_contents('.env'); $env = preg_replace('/^APP_URL=.*/m', 'APP_URL=https://website-smanis.onrender.com', $env); $env = preg_replace('/^DB_CONNECTION=.*/m', 'DB_CONNECTION=sqlite', $env); $env = preg_replace('/^DB_DATABASE=.*/m', 'DB_DATABASE=/var/www/html/database/database.sqlite', $env); file_put_contents('.env', $env);"
+RUN mkdir -p database && touch database/database.sqlite
 RUN composer install --prefer-dist --no-interaction --optimize-autoloader
-
+RUN php artisan key:generate --force
+RUN php artisan migrate --force
 RUN php artisan storage:link
 
 EXPOSE 10000
