@@ -5,14 +5,11 @@ RUN apt-get update && apt-get install -y \
     unzip \
     zip \
     libzip-dev \
-    libpng-dev \
-    libjpeg-dev \
-    libwebp-dev \
     libonig-dev \
     libxml2-dev \
     libicu-dev \
     libsqlite3-dev \
-    && docker-php-ext-install pdo_mysql pdo_sqlite sqlite3 mbstring exif pcntl bcmath intl sockets xml zip \
+    && docker-php-ext-install sqlite3 pdo_sqlite mbstring exif pcntl bcmath intl sockets xml zip \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
