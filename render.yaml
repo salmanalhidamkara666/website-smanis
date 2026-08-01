@@ -5,8 +5,8 @@ services:
     plan: free
     region: oregon
     branch: master
-    buildCommand: composer install --prefer-dist --no-interaction && php -r 'if (!file_exists(".env")) copy(".env.example", ".env");' && php artisan key:generate --force && php -r 'file_exists("database/database.sqlite") || touch("database/database.sqlite");' && php artisan migrate --force && php artisan storage:link
-    startCommand: php artisan serve --host=0.0.0.0 --port $PORT
+    buildCommand: composer install --prefer-dist --no-interaction --optimize-autoloader
+    startCommand: bash -lc 'mkdir -p storage bootstrap/cache database && chmod -R 0777 storage bootstrap/cache database || true; if [ ! -f ".env" ]; then cp .env.example .env; fi; if ! grep -qE "^APP_KEY=.+$" .env; then php artisan key:generate --force; fi; php -r "file_exists(\"database/database.sqlite\") || touch(\"database/database.sqlite\");"; php artisan migrate --force; php artisan storage:link || true; php artisan serve --host=0.0.0.0 --port $PORT'
     envVars:
       - key: APP_ENV
         value: production
@@ -26,3 +26,5 @@ services:
         value: file
       - key: QUEUE_CONNECTION
         value: sync
+      - key: FILESYSTEM_DISK
+        value: public

@@ -11,7 +11,8 @@ RUN apt-get update && apt-get install -y \
     libonig-dev \
     libxml2-dev \
     libicu-dev \
-    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath intl sockets xml zip \
+    libsqlite3-dev \
+    && docker-php-ext-install pdo_mysql pdo_sqlite sqlite3 mbstring exif pcntl bcmath intl sockets xml zip \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
@@ -19,12 +20,9 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 WORKDIR /var/www/html
 
 COPY . .
-RUN php -r 'if (!file_exists(".env")) copy(".env.example", ".env");'
-RUN php -r '$env = file_get_contents(".env"); $env = preg_replace("/^APP_URL=.*/m", "APP_URL=https://website-smanis.onrender.com", $env); $env = preg_replace("/^DB_CONNECTION=.*/m", "DB_CONNECTION=sqlite", $env); $env = preg_replace("/^DB_DATABASE=.*/m", "DB_DATABASE=/var/www/html/database/database.sqlite", $env); file_put_contents(".env", $env);'
-RUN mkdir -p database && touch database/database.sqlite
 RUN composer install --prefer-dist --no-interaction --optimize-autoloader
-# Do not run artisan commands that require DB during image build.
-# Migrations and key generation will be executed during the Render build/start phases.
+RUN mkdir -p storage bootstrap/cache database
+RUN chmod -R 0777 storage bootstrap/cache database || true
 
 EXPOSE 10000
 
