@@ -18,10 +18,9 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
-COPY composer.json composer.lock ./
+COPY . .
 RUN composer install --prefer-dist --no-interaction --optimize-autoloader
 
-COPY . .
 RUN php artisan storage:link
 
 EXPOSE 10000
